@@ -1,76 +1,91 @@
-const userModel = require('../models/user');
-
-databaseUsers = [];
+const validateToken = require('../../config/security/tokenValidator');
 
 module.exports = routes => {
 
-    routes.get('/', (req, res) => {
-        res.send('Recebido');
-    });
+    const dbFirebase = routes.config.firebaseConfig.collection('users');
 
-    routes.get('/users/:id', (req, res) => {
-        let user = databaseUsers.find(user => user.id == req.params.id);
+    routes.get('/users', validateToken, async (req, res) => {
+        try {
+            const docs = await dbFirebase.get();
+            let userNames = [];
 
-        if (user) {
-            res.send(user);
-        } else {
-            res.status(204).send('User not found');
+            docs.forEach(element => {
+                userNames.push(extractUser(element));
+            });
+
+            return res.send(userNames);
+
+        } catch (error) {
+            return res.status(500).send(error);
         }
     });
 
-    routes.get('/users', (req, res) => {
-        res.send(databaseUsers);
+    routes.get('/users/:id', validateToken, async (req, res) => {
+        try {
+            let user = await dbFirebase.doc(req.params.id).get();
+
+            if (user.exists) {
+                return res.send(extractUser(user));
+            } else {
+                return res.status(404).send('user not found');
+            }
+        } catch (error) {
+            return res.status(500).send(error);
+        }
     });
 
-    routes.post('/users', (req, res) => {
+    routes.post('/users', async (req, res) => {
         try {
 
-            let user = new userModel.User(
-                req.body.id,
-                req.body.name,
-                req.body.email,
-                req.body.password);
-
-            databaseUsers.push(user);
-            res.send(user);
+            let user = await dbFirebase.doc().set(req.body);
+            return res.send(user);
 
         } catch (error) {
             res.status(500).send(error);
         }
     });
 
-    routes.put('/users/:id', (req, res) => {
-        databaseUsers.forEach(user => {
+    routes.put('/users/:id', async (req, res) => {
+        try {
+            let user = await dbFirebase.doc(req.params.id).update(req.body);
 
-            if (user.id == req.params.id) {
-                try {
-                    user.name = req.body.name;
-                    user.email = req.body.email;
-                    user.password = req.body.password;
-
-                    res.send(user);
-                } catch (error) {
-                    return res.status(500).send("Invalid Parameters");
-                }
+            if (user) {
+                return res.send(`a vaga ${req.body.name} foi atualizada`);
+            } else {
+                return res.status(404).send('user not found');
             }
-
-        });
+        } catch (error) {
+            res.status(500).send(error);
+        }
     });
 
-    routes.delete('/users/:id', (req, res) => {
-        let userExist = false;
+    routes.delete('/users/:id', async (req, res) => {
+        try {
+            await dbFirebase.doc(req.params.id).delete();
 
-        databaseUsers.forEach((user, index) => {
-            if (user.id == req.params.id) {
-                userExist = true;
-                databaseUsers.splice(index, 1);
-
-                res.send(user);
-            }
-
-            if (!userExist) {
-                res.status(404).send('Id not found');
-            }
-        });
+            return res.send(`a vaga ${req.params.id} foi deletada`);
+        } catch (error) {
+            return res.status(404).send('user not found');
+        }
     });
+
+    extractUser = user => {
+        let info = user.data();
+
+        if (!info) {
+            return false;
+        }
+
+        return {
+            id: user.id,
+            name: info.name,
+            salary: info.salary,
+            description: info.description,
+            skills: info.skills,
+            area: info.area,
+            differentials: info.differentials,
+            isPcd: info.isPcd,
+            isActive: info.isActive
+        };
+    };
 };

@@ -43,6 +43,7 @@ jspm_packages/
 
 #FirebaseKey
 config/FirebaseKey.json
+config/secretKey.js
 
 # TypeScript v1 declaration files
 typings/

@@ -1,12 +1,10 @@
-const jobModel = require('../models/job');
-
-databaseJobs = [];
+const validateToken = require('../../config/security/tokenValidator');
 
 module.exports = routes => {
 
     const dbFirebase = routes.config.firebaseConfig.collection('jobs');
 
-    routes.get('/jobs', async (req, res) => {
+    routes.get('/jobs', /*validateToken*/ async (req, res) => {
         try {
             const docs = await dbFirebase.get();
             let jobNames = [];
@@ -22,7 +20,7 @@ module.exports = routes => {
         }
     });
 
-    routes.get('/jobs/:id', async (req, res) => {
+    routes.get('/jobs/:id', /*validateToken*/ async (req, res) => {
         try {
             let job = await dbFirebase.doc(req.params.id).get();
 
