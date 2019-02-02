@@ -4,7 +4,7 @@ module.exports = routes => {
 
     const dbFirebase = routes.config.firebaseConfig.collection('users');
 
-    routes.get('/users', validateToken, async (req, res) => {
+    routes.get('/users', /*validateToken,*/ async (req, res) => {
         try {
             const docs = await dbFirebase.get();
             let userNames = [];
@@ -20,7 +20,7 @@ module.exports = routes => {
         }
     });
 
-    routes.get('/users/:id', validateToken, async (req, res) => {
+    routes.get('/users/:id', /*validateToken,*/ async (req, res) => {
         try {
             let user = await dbFirebase.doc(req.params.id).get();
 
