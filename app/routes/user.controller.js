@@ -37,8 +37,8 @@ module.exports = routes => {
     routes.post('/users', async (req, res) => {
         try {
 
-            let user = await dbFirebase.doc().set(req.body);
-            return res.send(user);
+            let user = await dbFirebase.add(req.body);
+            return res.send(user.id);
 
         } catch (error) {
             res.status(500).send(error);
